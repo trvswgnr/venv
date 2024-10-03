@@ -212,9 +212,15 @@ export function generateHelpText(config: Config): string {
 
 const venvPath = path.join(CWD, ".venv/bin/activate");
 export async function withVenv(command: string, quiet = true) {
+    if (!fs.existsSync(venvPath)) {
+        return Result.err(new Error("No virtual environment found"));
+    }
     return await execShell(`source "${venvPath}" && ${command}`, quiet);
 }
 export async function withVenvGet(command: string) {
+    if (!fs.existsSync(venvPath)) {
+        return Result.err(new Error("No virtual environment found"));
+    }
     return await execShellGet(`source "${venvPath}" && ${command}`);
 }
 

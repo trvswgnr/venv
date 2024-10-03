@@ -175,11 +175,11 @@ async function uninstall(pkg: string | undefined) {
 
 async function run(script: string | undefined) {
     if (!script) {
-        console.error("No script provided");
+        script = "main.py";
         return;
     }
     if (!fs.existsSync(script)) {
-        console.error(`No script found at ${script}`);
+        console.error(`${script} does not exist`);
         return;
     }
     await withVenv(`python3 ${script}`, false);
