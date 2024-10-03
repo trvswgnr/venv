@@ -8,7 +8,7 @@ venv is a virtual environment and package manager for Python.
 >
 > Use at your own risk!
 
-I made venv because I always forget how to set up a Python virtual environment and the state of package management in Python leaves a lot to be desired.
+I made venv because I always forget how to set up a Python virtual environment and the state of package management in Python at the project level leaves a lot to be desired.
 
 ## Features
 
