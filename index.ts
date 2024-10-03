@@ -176,13 +176,13 @@ async function uninstall(pkg: string | undefined) {
 async function run(script: string | undefined) {
     if (!script) {
         script = "main.py";
-        return;
     }
     if (!fs.existsSync(script)) {
         console.error(`${script} does not exist`);
-        return;
+        process.exit(1);
     }
-    await withVenv(`python3 ${script}`, false);
+    const exitCode = await withVenv(`python3 ${script}`, false);
+    process.exit(exitCode);
 }
 
 async function install(pkg: string | undefined) {
@@ -258,7 +258,7 @@ async function init() {
     fileCopies.forEach((fileCopy) =>
         addToRollback(path.relative(CWD, fileCopy.dest)),
     );
-    await Promise.all(promises).catch((e) => rollback(e, added));
+    await Promise.all(promises).catch((e) => rollback(e, added, 1));
 
     // init python virtual environment
     let exitCode: number;
@@ -267,32 +267,40 @@ async function init() {
     addToRollback(".venv");
     exitCode = await execShell(`python3 -m venv .venv`);
     if (exitCode !== 0) {
-        await rollback("Failed to initialize virtual environment", added);
+        await rollback(
+            "Failed to initialize virtual environment",
+            added,
+            exitCode,
+        );
     }
 
     // create requirements.txt
     addToRollback("requirements.txt");
     exitCode = await execShell("touch requirements.txt");
     if (exitCode !== 0) {
-        await rollback("Failed to create requirements.txt", added);
+        await rollback("Failed to create requirements.txt", added, exitCode);
     }
 
     // create main.py
     addToRollback("main.py");
     exitCode = await execShell("touch main.py");
     if (exitCode !== 0) {
-        await rollback("Failed to create main.py", added);
+        await rollback("Failed to create main.py", added, exitCode);
     }
 
     // initialize git repository
     addToRollback(".git");
     exitCode = await execShell(`git init`);
     if (exitCode !== 0) {
-        await rollback("Failed to initialize git repository", added);
+        await rollback("Failed to initialize git repository", added, exitCode);
     }
 }
 
-async function rollback(e: unknown, addedFilesAndDirectories: string[]) {
+async function rollback(
+    e: unknown,
+    addedFilesAndDirectories: string[],
+    exitCode: number,
+) {
     console.error(e);
     console.log("Rolling back changes...");
     for (const file of addedFilesAndDirectories) {
