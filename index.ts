@@ -195,7 +195,7 @@ async function getExistingDependencies(): Promise<Array<Requirement>> {
 }
 
 async function init() {
-    const templateDir = path.join(__dirname, "venv-template");
+    const templateDir = path.join(__dirname, "template");
     console.log(
         "venv init helps you get started with a minimal project and tries to guess sensible defaults. Press ^C anytime to quit",
     );
