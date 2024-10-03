@@ -2,7 +2,7 @@
 
 venv is a virtual environment and package manager for Python.
 
-> [!WARNING]  
+> [!WARNING]
 > This project is still in early development - expect frequent updates and
 > breaking changes.
 >
@@ -18,13 +18,31 @@ venv is a virtual environment and package manager for Python.
 
 ## Installation
 
-To install venv, you need to have Bun installed on your system. If you don't have Bun, you can install it from [bun.sh](https://bun.sh).
+> [!NOTE]
+> Global installation via `bun` or `npm` is not available yet.
+> This feature is planned for future releases.
 
-Once Bun is installed, you can install venv globally using:
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/username/venv.git
+   cd venv
+   ```
 
-```bash
-bun install -g venv
-```
+2. Install dependencies:
+   ```bash
+   bun i
+   ```
+
+3. Build the project:
+   ```bash
+   bun run build
+   ```
+
+4. Add the `./bin` directory to your `PATH` or create a symlink to the
+   executable in a directory that's already in your `PATH`.
+   ```bash
+   ln -s $(pwd)/bin/venv /usr/local/bin/venv
+   ```
 
 ## Usage
 
@@ -50,7 +68,8 @@ or
 venv install
 ```
 
-The first command installs a specific package, while the second installs all packages listed in `requirements.txt`.
+The first command installs a specific package, while the second installs all
+packages listed in `requirements.txt`.
 
 ### Run a script
 
