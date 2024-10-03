@@ -1,5 +1,3 @@
-#!/usr/bin/env bun
-
 import fs from "node:fs";
 import { exec } from "node:child_process";
 import path from "node:path";
@@ -8,7 +6,7 @@ import { SemVer } from "@travvy/utils/misc";
 import { Result } from "@travvy/utils/result";
 
 const NAME = "venv";
-const VERSION = SemVer.create(0, 0, 1);
+const VERSION = SemVer.create({ major: 0, minor: 0, patch: 1 });
 
 const config = {
     name: NAME,
@@ -76,10 +74,10 @@ const config = {
 
 const CWD = process.cwd();
 
-const getCommandName = (name: string | undefined): CommandName | null => {
+const getCommandName = (name: string | undefined): string | null => {
     const cmdName = Object.keys(config.commands).find((key) => key === name);
     if (!cmdName) return null;
-    return cmdName as CommandName;
+    return cmdName;
 };
 
 await run();
@@ -93,7 +91,7 @@ async function run(): Promise<void> {
     const [options, commandNameRaw, arg] = parseInput(config);
     const commandName = getCommandName(commandNameRaw);
 
-    for (const opt in options) {
+    for (const opt of keys(options)) {
         if (options[opt]) {
             return optionFns[opt]();
         }
@@ -145,7 +143,7 @@ async function install(pkg: string | undefined) {
         .split("\n")
         .find((line) => line.startsWith("Version:"))
         ?.split(":")[1]
-        .trim();
+        ?.trim();
     if (pkgVersion) {
         const semver = SemVer.parse(pkgVersion);
         if (Result.isErr(semver)) {
@@ -183,9 +181,12 @@ async function getExistingDependencies(): Promise<Array<Requirement>> {
         .split("\n")
         .map((line) => {
             const [name, version] = line.split("==");
+            if (!name || !version) return null;
             const semver = SemVer.parse(version);
             if (Result.isErr(semver)) {
-                console.error(`Invalid semver: ${version}`);
+                console.error(
+                    `Invalid semver for ${name}: ${version}, skipping...`,
+                );
                 return null;
             }
             return { name, version: semver };
@@ -289,7 +290,7 @@ type ParsedInput<C extends Config> = readonly [
             ? boolean
             : string;
     },
-    command: CommandName | undefined,
+    command: string | undefined,
     arg: string | undefined,
 ];
 
