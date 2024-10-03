@@ -4,16 +4,19 @@ import { SemVer, Type } from "@travvy/utils/misc";
 import { Result } from "@travvy/utils/result";
 import { config } from "./config";
 import {
+    color,
     copyTemplateFile,
     CWD,
     execShell,
     extractPackageName,
+    extractPackageVersion,
     filterArray,
     generateHelpText,
     getCommandName,
     getExistingDependencies,
     objectKeys,
     parseInput,
+    timed,
     withVenv,
     withVenvGet,
     writeDependencies,
@@ -36,26 +39,35 @@ async function main(): Promise<void> {
         }
     }
 
-    console.log(commandName, config.version);
+    console.log(config.name, commandName, color.dim(config.version) + "\n");
 
-    switch (commandName) {
-        case "init":
-            return await init();
-        case "run":
-            return await run(arg);
-        case "install":
-            return await install(arg);
-        case "uninstall":
-            return await uninstallOne(arg);
-        case "list":
-            return await list();
-        case "update":
-            return await update();
-        case null:
-            return help();
-        default:
-            void (commandName satisfies never);
+    if (commandName === null) {
+        return help();
     }
+
+    const [time, res] = await timed(async () => {
+        switch (commandName) {
+            case "init":
+                return await init();
+            case "run":
+                return await run(arg);
+            case "install":
+                return await install(arg);
+            case "uninstall":
+                return await uninstall(arg);
+            case "list":
+                return await list();
+            case "update":
+                return await update();
+            default:
+                void (commandName satisfies never);
+        }
+    });
+    if (Type.isUndefined(res)) {
+        console.log(`\n${color.dim(time + " " + "done")}`);
+        return;
+    }
+    console.log(`\n${res} ${color.dim(time)}`);
 }
 
 async function list() {
@@ -151,31 +163,45 @@ async function update() {
     }
 }
 
-async function uninstallOne(pkg: string | undefined) {
-    if (Type.isUndefined(pkg)) {
+async function uninstall(pkgs: string | undefined) {
+    if (Type.isUndefined(pkgs)) {
         console.error("No package provided");
         return;
     }
+    const pkgsArray = pkgs.split(" ");
+    const promises: Promise<string | null>[] = [];
+    for (const pkg of pkgsArray) {
+        promises.push(uninstallOne(pkg));
+    }
+    const results = await Promise.all(promises);
+    const names = results.filter(Type.isString);
+    console.log(
+        names.map((name) => `${color.bright.red("-")} ${name}`).join("\n"),
+    );
+    return `${names.length} package${names.length === 1 ? "" : "s"} removed`;
+}
+
+async function uninstallOne(pkg: string | undefined) {
     const pkgName = extractPackageName(pkg);
     if (!pkgName) {
         console.error("Invalid package name");
         process.exit(1);
     }
-    const result = await withVenvGet(`pip3 uninstall ${pkgName}`);
+    const result = await withVenvGet(`pip3 uninstall -y ${pkgName}`);
     if (Result.isErr(result)) {
         console.error(result.message);
         process.exit(1);
     }
     if (result.includes("as it is not installed")) {
-        console.error(`${pkgName} is not installed`);
-        return;
+        console.log("no package found");
+        process.exit(1);
     }
     const allExistingDependencies = await getExistingDependencies();
     const existingDependencies = allExistingDependencies.filter(
         (dep) => dep.name !== pkgName,
     );
     await writeDependencies(existingDependencies);
-    console.log(`Removed ${pkgName}`);
+    return pkgName;
 }
 
 async function run(script: string | undefined) {
@@ -198,15 +224,22 @@ async function install(pkgs: string | undefined) {
         return;
     }
     const pkgsArray = pkgs.split(" ");
-    const promises: Promise<string>[] = [];
+    const promises: Promise<[string, string]>[] = [];
     for (const pkg of pkgsArray) {
         promises.push(installOne(pkg));
     }
     const installed = await Promise.all(promises);
-    console.log(installed.map((pkg) => `installed ${pkg}`).join("\n"));
+    console.log(
+        installed
+            .map(([pkg, pkgVersion]) => {
+                return `${color.bright.green("installed")} ${pkg}${color.dim(`@${pkgVersion}`)}`;
+            })
+            .join("\n"),
+    );
+    return `${color.bright.green(String(installed.length))} package${installed.length === 1 ? "" : "s"} installed`;
 }
 
-async function installOne(pkg: string) {
+async function installOne(pkg: string): Promise<[string, string]> {
     const pkgName = extractPackageName(pkg);
     if (!pkgName) {
         console.error("Invalid package name", pkg);
@@ -241,7 +274,7 @@ async function installOne(pkg: string) {
     }
     existingDependencies.push({ name: pkgName, version: semver });
     await writeDependencies(existingDependencies);
-    return pkg;
+    return [pkg, pkgVersion];
 }
 
 async function init() {
@@ -308,6 +341,29 @@ async function init() {
     if (exitCode !== 0) {
         await rollback("Failed to initialize git repository", added, exitCode);
     }
+    /*
+Done! A package.json file was saved in the current directory.
+ + index.ts
+ + .gitignore
+ + tsconfig.json (for editor auto-complete)
+ + README.md
+
+To get started, run:
+  bun run index.ts
+*/
+    console.log(`
+${color.bright.green("Done!")} A new project was created in the current directory.
+ + ${color.dim("main.py")}
+ + ${color.dim("requirements.txt")}
+ + ${color.dim(".gitignore")}
+ + ${color.dim("README.md")}
+
+To get started, run:
+  ${color.bright.cyan("venv run main.py")}`);
+}
+
+async function help() {
+    console.log(generateHelpText(config));
 }
 
 async function rollback(
@@ -320,9 +376,5 @@ async function rollback(
     for (const file of addedFilesAndDirectories) {
         await fs.promises.rm(file, { recursive: true });
     }
-    process.exit(1);
-}
-
-async function help() {
-    console.log(generateHelpText(config));
+    process.exit(exitCode);
 }

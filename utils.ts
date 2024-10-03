@@ -306,3 +306,92 @@ export function extractPackageName(
 
     return null;
 }
+
+export function extractPackageVersion(
+    packageSpec: string | undefined | null,
+): string | null {
+    if (typeof packageSpec !== "string") {
+        return null;
+    }
+    packageSpec = packageSpec.trim();
+    // replace all non-numeric leading characters with an empty string
+    return packageSpec.replace(/^[^0-9]+/g, "");
+}
+
+export enum Color {
+    Black = "\u001b[30m",
+    Red = "\u001b[31m",
+    Green = "\u001b[32m",
+    Yellow = "\u001b[33m",
+    Blue = "\u001b[34m",
+    Magenta = "\u001b[35m",
+    Cyan = "\u001b[36m",
+    White = "\u001b[37m",
+    Dim = "\u001b[2m",
+    BrightBlack = "\u001b[30;1m",
+    BrightRed = "\u001b[31;1m",
+    BrightGreen = "\u001b[32;1m",
+    BrightYellow = "\u001b[33;1m",
+    BrightBlue = "\u001b[34;1m",
+    BrightMagenta = "\u001b[35;1m",
+    BrightCyan = "\u001b[36;1m",
+    BrightWhite = "\u001b[37;1m",
+}
+
+export function color(input: string, color: Color) {
+    if (!Bun.enableANSIColors) return input;
+    return `${color}${input}\u001b[0m`;
+}
+color.black = (input: string) => color(input, Color.Black);
+color.red = (input: string) => color(input, Color.Red);
+color.green = (input: string) => color(input, Color.Green);
+color.yellow = (input: string) => color(input, Color.Yellow);
+color.blue = (input: string) => color(input, Color.Blue);
+color.magenta = (input: string) => color(input, Color.Magenta);
+color.cyan = (input: string) => color(input, Color.Cyan);
+color.white = (input: string) => color(input, Color.White);
+color.dim = (input: string) => color(input, Color.Dim);
+color.bright = {
+    black: (input: string) => color(input, Color.BrightBlack),
+    red: (input: string) => color(input, Color.BrightRed),
+    green: (input: string) => color(input, Color.BrightGreen),
+    yellow: (input: string) => color(input, Color.BrightYellow),
+    blue: (input: string) => color(input, Color.BrightBlue),
+    magenta: (input: string) => color(input, Color.BrightMagenta),
+    cyan: (input: string) => color(input, Color.BrightCyan),
+    white: (input: string) => color(input, Color.BrightWhite),
+};
+
+type TimeString = `[${string}]`;
+export async function timed<T>(fn: () => Promise<T>): Promise<[TimeString, T]> {
+    const start = Bun.nanoseconds();
+    const res = await fn();
+    const end = Bun.nanoseconds();
+    return [`[${convertNanoseconds(end - start)}]`, res];
+}
+
+export function convertNanoseconds(nanoseconds: number): string {
+    const units = [
+        { symbol: "y", value: 31536000000000000 }, // year
+        { symbol: "d", value: 86400000000000 }, // day
+        { symbol: "h", value: 3600000000000 }, // hour
+        { symbol: "m", value: 60000000000 }, // minute
+        { symbol: "s", value: 1000000000 }, // second
+        { symbol: "ms", value: 1000000 }, // millisecond
+        { symbol: "μs", value: 1000 }, // microsecond
+        { symbol: "ns", value: 1 }, // nanosecond
+    ];
+
+    for (const { symbol, value } of units) {
+        if (nanoseconds >= value) {
+            const amount = nanoseconds / value;
+            return `${roundToTwo(amount)}${symbol}`;
+        }
+    }
+
+    return "0ns";
+}
+
+export function roundToTwo(num: number) {
+    return Number(Math.round(Number(num + "e+2")) + "e-2");
+}
