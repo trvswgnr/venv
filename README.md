@@ -16,9 +16,9 @@ To install venv, you need to have Bun installed on your system. If you don't hav
 
 Once Bun is installed, you can install venv globally using:
 
-\```bash
+```bash
 bun install -g venv
-\```
+```
 
 ## Usage
 
@@ -26,73 +26,73 @@ Here are some common commands you can use with venv:
 
 ### Initialize a new project
 
-\```bash
+```bash
 venv init
-\```
+```
 
 This command helps you set up a new Python project with a virtual environment.
 
 ### Install packages
 
-\```bash
+```bash
 venv install <package_name>
-\```
+```
 
 or
 
-\```bash
+```bash
 venv install
-\```
+```
 
-The first command installs a specific package, while the second installs all packages listed in \`requirements.txt\`.
+The first command installs a specific package, while the second installs all packages listed in `requirements.txt`.
 
 ### Run a script
 
-\```bash
+```bash
 venv run <script_name>
-\```
+```
 
 This command runs a Python script within the virtual environment.
 
 ### List installed packages
 
-\```bash
+```bash
 venv list
-\```
+```
 
 ### Update packages
 
-\```bash
+```bash
 venv update
-\```
+```
 
 ### Uninstall a package
 
-\```bash
+```bash
 venv uninstall <package_name>
-\```
+```
 
 ### Get help
 
-\```bash
+```bash
 venv --help
-\```
+```
 
 ## Development
 
 To set up the development environment:
 
 1. Clone the repository
-2. Run \`bun install\` to install dependencies
-3. Use \`bun run dev\` to run the development version
+2. Run `bun install` to install dependencies
+3. Use `bun run dev` to run the development version
 
 To build the project:
 
-\```bash
+```bash
 bun run build
-\```
+```
 
-This will create an executable in the \`./bin\` directory.
+This will create an executable in the `./bin` directory.
 
 ## Contributing
 
