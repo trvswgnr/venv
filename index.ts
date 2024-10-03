@@ -182,7 +182,7 @@ async function run(script: string | undefined) {
         console.error(`No script found at ${script}`);
         return;
     }
-    await withVenv(`python3 ${script}`);
+    await withVenv(`python3 ${script}`, false);
 }
 
 async function install(pkg: string | undefined) {
