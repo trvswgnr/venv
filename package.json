@@ -12,6 +12,6 @@
     },
     "type": "module",
     "dependencies": {
-        "@travvy/utils": "0.0.57"
+        "@travvy/utils": "0.0.61"
     }
 }
