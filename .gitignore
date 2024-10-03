@@ -14,6 +14,7 @@ vendor/
 # Build output
 dist/
 build/
+bin/
 
 # Logs
 *.log
@@ -90,3 +91,5 @@ ENV/
 # Backup files
 *~
 *.bak
+
+/testing/
