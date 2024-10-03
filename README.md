@@ -2,6 +2,10 @@
 
 venv is a virtual environment and package manager for Python.
 
+> [!WARNING]  
+> This project is still in early development - expect frequent updates and
+> breaking changes. Use at your own risk!
+
 ## Features
 
 -   Create and manage Python virtual environments
