@@ -12,6 +12,8 @@
     },
     "type": "module",
     "dependencies": {
-        "@travvy/utils": "0.0.61"
+        "@travvy/utils": "0.0.61",
+        "is-even": "^1.0.0",
+        "is-odd": "^3.0.1"
     }
 }

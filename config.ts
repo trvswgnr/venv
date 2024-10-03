@@ -1,8 +1,26 @@
 import { SemVer } from "@travvy/utils/misc";
 import { type ParseArgsConfig } from "node:util";
-
+import { exec } from "node:child_process";
+import { execShellGet } from "./utils";
+import { Result } from "@travvy/utils/result";
 const NAME = "venv";
-const VERSION = SemVer.create({ major: 0, minor: 0, patch: 1 });
+const LAST_COMMIT_HASH = await getLastCommitHash();
+console.log(LAST_COMMIT_HASH);
+const VERSION = SemVer.create({
+    major: 0,
+    minor: 0,
+    patch: 1,
+    metadata: LAST_COMMIT_HASH,
+});
+
+async function getLastCommitHash() {
+    const result = await execShellGet(`git rev-parse --short HEAD`);
+    if (Result.isErr(result)) {
+        console.error(result.message);
+        process.exit(1);
+    }
+    return result.trim();
+}
 
 export const config = {
     name: NAME,

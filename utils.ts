@@ -8,22 +8,13 @@ import { exec } from "node:child_process";
 
 export const CWD = process.cwd();
 
-type BaseCommandName = keyof typeof config.commands;
-type CommandName =
-    | BaseCommandName
-    | {
-          [K in keyof typeof config.commands]: (typeof config.commands)[K] extends {
-              aliases: string[];
-          }
-              ? (typeof config.commands)[K]["aliases"][number]
-              : never;
-      }[keyof typeof config.commands];
+type CommandName = keyof typeof config.commands;
 
 export const getCommandName = (
     name: string | undefined,
 ): CommandName | null => {
-    const cmdName = Object.keys(config.commands).find((k) => {
-        const key = k as keyof typeof config.commands;
+    const cmdName = Object.keys(config.commands).find((_key) => {
+        const key = _key as keyof typeof config.commands;
         if (key === name) return true;
         if (
             isObjectWithKey(config.commands[key], "aliases") &&
@@ -242,7 +233,11 @@ export async function execShellGet(
                 resolve(
                     code === 0
                         ? Result.ok(stdout.trim())
-                        : Result.err(new Error(stderr.trim())),
+                        : Result.err(
+                              new Error(
+                                  stderr.trim() || `exited with code ${code}`,
+                              ),
+                          ),
                 );
             });
         } catch (err) {

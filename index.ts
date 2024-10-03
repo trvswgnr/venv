@@ -36,19 +36,17 @@ async function main(): Promise<void> {
         }
     }
 
+    console.log(commandName, config.version);
+
     switch (commandName) {
         case "init":
             return await init();
         case "run":
             return await run(arg);
         case "install":
-        case "add":
-        case "i":
             return await install(arg);
         case "uninstall":
-        case "remove":
-        case "rm":
-            return await uninstall(arg);
+            return await uninstallOne(arg);
         case "list":
             return await list();
         case "update":
@@ -153,7 +151,7 @@ async function update() {
     }
 }
 
-async function uninstall(pkg: string | undefined) {
+async function uninstallOne(pkg: string | undefined) {
     if (Type.isUndefined(pkg)) {
         console.error("No package provided");
         return;
@@ -163,8 +161,15 @@ async function uninstall(pkg: string | undefined) {
         console.error("Invalid package name");
         process.exit(1);
     }
-    console.log(`Removing ${pkgName}...`);
-    await withVenv(`pip3 uninstall ${pkgName}`);
+    const result = await withVenvGet(`pip3 uninstall ${pkgName}`);
+    if (Result.isErr(result)) {
+        console.error(result.message);
+        process.exit(1);
+    }
+    if (result.includes("as it is not installed")) {
+        console.error(`${pkgName} is not installed`);
+        return;
+    }
     const allExistingDependencies = await getExistingDependencies();
     const existingDependencies = allExistingDependencies.filter(
         (dep) => dep.name !== pkgName,
@@ -185,19 +190,28 @@ async function run(script: string | undefined) {
     process.exit(exitCode);
 }
 
-async function install(pkg: string | undefined) {
-    if (Type.isUndefined(pkg)) {
+async function install(pkgs: string | undefined) {
+    if (Type.isUndefined(pkgs)) {
         // install all dependencies from requirements.txt
         console.log("Installing all dependencies from requirements.txt");
         await withVenv(`pip3 install -r requirements.txt`);
         return;
     }
+    const pkgsArray = pkgs.split(" ");
+    const promises: Promise<string>[] = [];
+    for (const pkg of pkgsArray) {
+        promises.push(installOne(pkg));
+    }
+    const installed = await Promise.all(promises);
+    console.log(installed.map((pkg) => `installed ${pkg}`).join("\n"));
+}
+
+async function installOne(pkg: string) {
     const pkgName = extractPackageName(pkg);
     if (!pkgName) {
-        console.error("Invalid package name");
+        console.error("Invalid package name", pkg);
         process.exit(1);
     }
-    console.log(`Installing ${pkgName}...`);
     // install the package and add it to requirements.txt
     const allExistingDependencies = await getExistingDependencies();
     const existingDependencies = allExistingDependencies.filter(
@@ -218,7 +232,7 @@ async function install(pkg: string | undefined) {
         ?.trim();
     if (!pkgVersion) {
         console.error(`Failed to get version for ${pkgName}`);
-        return;
+        process.exit(1);
     }
     const semver = SemVer.parse(pkgVersion);
     if (Result.isErr(semver)) {
@@ -227,7 +241,7 @@ async function install(pkg: string | undefined) {
     }
     existingDependencies.push({ name: pkgName, version: semver });
     await writeDependencies(existingDependencies);
-    console.log(`Installed ${pkg}`);
+    return pkg;
 }
 
 async function init() {
